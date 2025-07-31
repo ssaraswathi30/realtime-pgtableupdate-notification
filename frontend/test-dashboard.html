@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Multi-Client Test Dashboard</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px;
+      background-color: #f8f9fa;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 { 
+      text-align: center; 
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .client-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .client-frame {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      height: 400px;
+      background: white;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 6px;
+    }
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+    .btn-success { background: #28a745; }
+    .btn-success:hover { background: #1e7e34; }
+    .btn-warning { background: #ffc107; color: #212529; }
+    .btn-warning:hover { background: #e0a800; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #c82333; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Multi-Client WebSocket Test Dashboard</h1>
+    
+    <div class="controls">
+      <h3>Quick Test Commands</h3>
+      <p>Use these buttons to insert test log entries and see them appear in all connected clients:</p>
+      <button class="btn btn-success" onclick="insertLog('INFO', 'Application started successfully', 'web-server')">
+        Info Log
+      </button>
+      <button class="btn btn-warning" onclick="insertLog('WARNING', 'High memory usage detected', 'monitoring')">
+        Warning Log
+      </button>
+      <button class="btn btn-danger" onclick="insertLog('ERROR', 'Database connection failed', 'api-server')">
+        Error Log
+      </button>
+      <button class="btn" onclick="insertMultipleLogs()">
+        Multiple Logs
+      </button>
+    </div>
+
+    <div class="client-grid">
+      <div class="client-frame">
+        <iframe src="client1.html" title="Client 1"></iframe>
+      </div>
+      <div class="client-frame">
+        <iframe src="client2.html" title="Client 2"></iframe>
+      </div>
+      <div class="client-frame">
+        <iframe src="client3.html" title="Client 3"></iframe>
+      </div>
+    </div>
+
+    <div class="controls">
+      <h3>Manual Testing</h3>
+      <p>You can also test manually using Docker command:</p>
+      <code>
+        docker exec -it postgres-logs psql -U loguser -d logsdb -c "INSERT INTO logs (log_level, message, source) VALUES ('DEBUG', 'Manual test message', 'test-client');"
+      </code>
+    </div>
+  </div>
+
+  <script>
+    async function insertLog(level, message, source) {
+      try {
+        const response = await fetch('http://localhost:8080/api/logs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            log_level: level,
+            message: message,
+            source: source
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ Log inserted successfully:', result.log);
+          // Show a brief success indicator
+          showNotification(`✅ ${level} log inserted successfully!`, 'success');
+        } else {
+          console.error('❌ Failed to insert log:', result.error);
+          showNotification(`❌ Failed to insert log: ${result.error}`, 'error');
+        }
+      } catch (error) {
+        console.error('❌ Error inserting log:', error);
+        showNotification(`❌ Error: ${error.message}`, 'error');
+      }
+    }
+
+    async function insertMultipleLogs() {
+      const logs = [
+        { level: 'INFO', message: 'User login successful', source: 'auth-service' },
+        { level: 'DEBUG', message: 'Processing request ID: ' + Math.random().toString(36).substr(2, 9), source: 'request-handler' },
+        { level: 'WARNING', message: 'Rate limit approaching', source: 'api-gateway' }
+      ];
+
+      for (const log of logs) {
+        await insertLog(log.level, log.message, log.source);
+        // Small delay between logs
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.textContent = message;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        border-radius: 4px;
+        color: white;
+        font-weight: bold;
+        z-index: 1000;
+        background: ${type === 'success' ? '#28a745' : '#dc3545'};
+        animation: slideIn 0.3s ease-out;
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
+</body>
+</html>

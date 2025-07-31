@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Logs - Client 1</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background-color: #f0f8ff; 
+      margin: 20px;
+    }
+    h2 { color: #0066cc; }
+    #logs { 
+      list-style-type: none; 
+      padding: 0; 
+    }
+    #logs li { 
+      background: #e6f3ff; 
+      margin: 5px 0; 
+      padding: 10px; 
+      border-left: 4px solid #0066cc; 
+      border-radius: 4px;
+    }
+    .status { 
+      background: #d4edda; 
+      padding: 10px; 
+      border-radius: 4px; 
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h2>Client 1 - Real-Time Logs</h2>
+  <div id="status" class="status">Disconnected</div>
+  <ul id="logs"></ul>
+
+  <script>
+    const socket = new WebSocket('ws://localhost:8081');
+    const list = document.getElementById('logs');
+    const status = document.getElementById('status');
+
+    socket.onopen = () => {
+      status.textContent = 'Connected as Client 1';
+      status.style.background = '#d4edda';
+    };
+
+    socket.onclose = () => {
+      status.textContent = 'Disconnected';
+      status.style.background = '#f8d7da';
+    };
+
+    socket.onerror = () => {
+      status.textContent = 'Connection Error';
+      status.style.background = '#f8d7da';
+    };
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const item = document.createElement('li');
+      const timestamp = new Date().toLocaleTimeString();
+      item.textContent = `[${timestamp}] #${data.id} [${data.log_level}] ${data.message} - ${data.source || 'Unknown'}`;
+      list.insertBefore(item, list.firstChild); // Insert at top
+    };
+  </script>
+</body>
+</html>
