@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Logs</title>
+</head>
+<body>
+  <h2>Real-Time Logs</h2>
+  <ul id="logs"></ul>
+
+  <script>
+    const socket = new WebSocket('ws://localhost:8080');
+    const list = document.getElementById('logs');
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const item = document.createElement('li');
+      item.textContent = `#${data.id} [${data.log_level}] ${data.message} - ${data.source || 'Unknown'}`;
+      list.appendChild(item);
+    };
+  </script>
+</body>
+</html>

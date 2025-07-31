@@ -1,0 +1,13 @@
+{
+  "name": "pg-notify-listener",
+  "version": "1.0.0",
+  "description": "Listens to PostgreSQL pg_notify and broadcasts via WebSocket",
+  "main": "listener.js",
+  "dependencies": {
+    "pg": "^8.11.3",
+    "ws": "^8.16.0"
+  },
+  "scripts": {
+    "start": "node listener.js"
+  }
+}

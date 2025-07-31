@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres-logs
+    environment:
+      POSTGRES_DB: logsdb
+      POSTGRES_USER: loguser
+      POSTGRES_PASSWORD: logpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - logs-network
+
+  listener:
+    build: .
+    container_name: logs-listener
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://loguser:logpass@postgres:5432/logsdb
+    depends_on:
+      - postgres
+    networks:
+      - logs-network
+    restart: unless-stopped
+
+  frontend:
+    image: nginx:alpine
+    container_name: logs-frontend
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    networks:
+      - logs-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  logs-network:
+    driver: bridge
