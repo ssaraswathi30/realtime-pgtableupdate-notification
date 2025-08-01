@@ -58,7 +58,7 @@ npm run test-logs      # Test logs API only
    ```
 
 2. **Access the application:**
-   - Frontend: http://localhost:3000/client1.html
+   - Frontend: http://localhost:3000/index.html
    - Dashboard (Logs + Bot Status): http://localhost:3000/dashboard.html
    - WebSocket: ws://localhost:8080
    - PostgreSQL: localhost:5432
@@ -177,7 +177,6 @@ UPDATE botstatus SET health_score = 75, description = 'Performance slightly degr
 ├── .env.example               # Environment variables template
 ├── frontend/
 │   ├── index.html             # Basic WebSocket client frontend
-│   ├── client1.html           # Enhanced client with styling
 │   └── dashboard.html         # Split-view dashboard (Logs + Bot Status)
 ├── listener/
 │   ├── listener.js            # Node.js WebSocket server with API endpoints
