@@ -26,7 +26,7 @@ This project shows how to trigger real-time updates when log entries are inserte
    ```
 
 2. **Access the application:**
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:3000/client1.html
    - WebSocket: ws://localhost:8080
    - PostgreSQL: localhost:5432
 

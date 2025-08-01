@@ -1,6 +1,6 @@
 const { Client } = require('pg');
-const WebSocket = require('ws');
 const http = require('http');
+const { Server } = require('socket.io');
 const url = require('url');
 
 const db = new Client({
@@ -10,7 +10,7 @@ const db = new Client({
 db.connect();
 db.query('LISTEN log_channel');
 
-// Create HTTP server for API endpoints only
+// Create HTTP server for API endpoints
 const httpServer = http.createServer((req, res) => {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,40 +51,53 @@ const httpServer = http.createServer((req, res) => {
     });
   } else if (req.method === 'GET' && parsedUrl.pathname === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', clients: wss?.clients?.size || 0 }));
+    res.end(JSON.stringify({ status: 'ok', clients: io.engine.clientsCount || 0 }));
   } else {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Not Found' }));
   }
 });
 
-// Create separate WebSocket server
-const wss = new WebSocket.Server({ port: 8081 });
-
-httpServer.listen(8080, () => {
-  console.log('✅ HTTP API server running on http://localhost:8080');
+// Create Socket.IO server
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 });
 
-console.log('✅ WebSocket server running on ws://localhost:8081');
+httpServer.listen(8080, () => {
+  console.log('✅ HTTP API + Socket.IO server running on http://localhost:8080');
+});
 
-wss.on('connection', ws => {
-  console.log(`📡 WebSocket client connected. Total clients: ${wss.clients.size}`);
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  console.log(`📡 Socket.IO client connected: ${socket.id}. Total clients: ${io.engine.clientsCount}`);
   
-  ws.on('close', () => {
-    console.log(`❌ WebSocket client disconnected. Total clients: ${wss.clients.size}`);
+  // Send welcome message
+  socket.emit('welcome', { message: 'Connected to real-time log updates' });
+  
+  // Handle client disconnect
+  socket.on('disconnect', (reason) => {
+    console.log(`❌ Socket.IO client disconnected: ${socket.id}, reason: ${reason}. Total clients: ${io.engine.clientsCount}`);
+  });
+  
+  // Handle custom events (optional)
+  socket.on('subscribe-logs', (data) => {
+    console.log(`📝 Client ${socket.id} subscribed to logs:`, data);
+    socket.join('logs'); // Join a specific room for targeted broadcasting
   });
 });
 
 db.on('notification', msg => {
   const payload = JSON.parse(msg.payload);
   console.log('📨 New log entry inserted:', payload);
-  console.log(`🔄 Broadcasting to ${wss.clients.size} connected clients`);
+  console.log(`🔄 Broadcasting to ${io.engine.clientsCount} connected clients`);
 
-  // Broadcast to all WebSocket clients
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(payload));
-    }
-  });
+  // Broadcast to all Socket.IO clients
+  io.emit('log-update', payload);
+  
+  // Alternative: Broadcast only to clients in 'logs' room
+  // io.to('logs').emit('log-update', payload);
 });
 

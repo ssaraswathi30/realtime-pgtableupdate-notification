@@ -20,8 +20,7 @@ services:
     build: .
     container_name: logs-listener
     ports:
-      - "8080:8080"  # HTTP API
-      - "8081:8081"  # WebSocket
+      - "8080:8080"  # HTTP API + Socket.IO
     environment:
       DATABASE_URL: postgres://loguser:logpass@postgres:5432/logsdb
     depends_on:
@@ -46,4 +45,5 @@ volumes:
 
 networks:
   logs-network:
+    driver: bridge
     driver: bridge

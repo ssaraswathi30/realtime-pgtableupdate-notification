@@ -2,6 +2,7 @@
 <html>
 <head>
   <title>Live Logs - Client 3</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -34,32 +35,37 @@
   <ul id="logs"></ul>
 
   <script>
-    const socket = new WebSocket('ws://localhost:8081');
+    // Determine the correct Socket.IO server URL
+    const socketUrl = window.location.hostname === 'localhost' ? 
+      'http://localhost:8080' : 
+      `${window.location.protocol}//${window.location.hostname}:8080`;
+    
+    const socket = io(socketUrl);
     const list = document.getElementById('logs');
     const status = document.getElementById('status');
 
-    socket.onopen = () => {
+    socket.on('connect', () => {
       status.textContent = 'Connected as Client 3';
       status.style.background = '#d4edda';
-    };
+      socket.emit('subscribe-logs', { client: 'client3' });
+    });
 
-    socket.onclose = () => {
+    socket.on('disconnect', () => {
       status.textContent = 'Disconnected';
       status.style.background = '#f8d7da';
-    };
+    });
 
-    socket.onerror = () => {
+    socket.on('connect_error', () => {
       status.textContent = 'Connection Error';
       status.style.background = '#f8d7da';
-    };
+    });
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    socket.on('log-update', (data) => {
       const item = document.createElement('li');
       const timestamp = new Date().toLocaleTimeString();
       item.textContent = `[${timestamp}] #${data.id} [${data.log_level}] ${data.message} - ${data.source || 'Unknown'}`;
       list.insertBefore(item, list.firstChild); // Insert at top
-    };
+    });
   </script>
 </body>
 </html>

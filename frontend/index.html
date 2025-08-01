@@ -2,21 +2,38 @@
 <html>
 <head>
   <title>Live Logs</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
   <h2>Real-Time Logs</h2>
   <ul id="logs"></ul>
 
   <script>
-    const socket = new WebSocket('ws://localhost:8081');
+    // Determine the correct Socket.IO server URL
+    const socketUrl = window.location.hostname === 'localhost' ? 
+      'http://localhost:8080' : 
+      `${window.location.protocol}//${window.location.hostname}:8080`;
+    
+    const socket = io(socketUrl);
     const list = document.getElementById('logs');
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    socket.on('connect', () => {
+      console.log('Connected to Socket.IO server');
+    });
+
+    socket.on('welcome', (data) => {
+      console.log('Welcome message:', data.message);
+    });
+
+    socket.on('log-update', (data) => {
       const item = document.createElement('li');
       item.textContent = `#${data.id} [${data.log_level}] ${data.message} - ${data.source || 'Unknown'}`;
       list.appendChild(item);
-    };
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server');
+    });
   </script>
 </body>
 </html>
