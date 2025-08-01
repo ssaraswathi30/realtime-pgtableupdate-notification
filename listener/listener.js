@@ -133,6 +133,11 @@ io.on('connection', (socket) => {
     console.log(`📝 Client ${socket.id} subscribed to logs:`, data);
     socket.join('logs'); // Join a specific room for targeted broadcasting
   });
+  
+  socket.on('subscribe-botstatus', (data) => {
+    console.log(`🤖 Client ${socket.id} subscribed to bot status:`, data);
+    socket.join('botstatus'); // Join a specific room for targeted broadcasting
+  });
 });
 
 db.on('notification', msg => {
