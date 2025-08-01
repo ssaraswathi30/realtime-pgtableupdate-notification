@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-Time Dashboard - Logs & Bot Status</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background-color: #f5f5f5; 
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    .dashboard {
+      display: flex;
+      gap: 20px;
+      height: 80vh;
+    }
+    
+    .panel {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .panel-header {
+      background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    .panel-content {
+      padding: 20px;
+      height: calc(100% - 70px);
+      overflow-y: auto;
+    }
+    
+    .status-indicator {
+      background: #d4edda;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      border-left: 4px solid #28a745;
+    }
+    
+    .status-indicator.disconnected {
+      background: #f8d7da;
+      border-left-color: #dc3545;
+    }
+    
+    /* Log styles */
+    #logs { 
+      list-style-type: none; 
+      padding: 0; 
+      margin: 0;
+    }
+    
+    #logs li { 
+      background: #e8f4fd; 
+      margin: 8px 0; 
+      padding: 12px; 
+      border-left: 4px solid #007bff; 
+      border-radius: 4px;
+      font-size: 14px;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    #logs li.error { border-left-color: #dc3545; background: #fdeaea; }
+    #logs li.warning { border-left-color: #ffc107; background: #fffbf0; }
+    #logs li.info { border-left-color: #17a2b8; background: #e6f9fc; }
+    #logs li.debug { border-left-color: #6c757d; background: #f8f9fa; }
+    
+    /* Bot Status styles */
+    #bot-status { 
+      list-style-type: none; 
+      padding: 0; 
+      margin: 0;
+    }
+    
+    .bot-item {
+      background: #f8f9fa;
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #dee2e6;
+      animation: slideIn 0.3s ease-out;
+      transition: all 0.3s ease;
+    }
+    
+    .bot-item.new {
+      background: #e8f5e8;
+      border-color: #28a745;
+      animation: newBotPulse 1s ease-out;
+    }
+    
+    .bot-name {
+      font-weight: bold;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .bot-status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    
+    .bot-status.online { background: #d4edda; color: #155724; }
+    .bot-status.offline { background: #f8d7da; color: #721c24; }
+    .bot-status.maintenance { background: #fff3cd; color: #856404; }
+    .bot-status.error { background: #f8d7da; color: #721c24; }
+    
+    .bot-health {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    
+    .health-bar {
+      background: #e9ecef;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 5px 0;
+    }
+    
+    .health-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .health-fill.good { background: #28a745; }
+    .health-fill.warning { background: #ffc107; }
+    .health-fill.critical { background: #dc3545; }
+    
+    .bot-description {
+      font-size: 13px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    .bot-timestamp {
+      font-size: 12px;
+      color: #999;
+      margin-top: 8px;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes newBotPulse {
+      0% {
+        background: #d4edda;
+        transform: scale(1.02);
+      }
+      50% {
+        background: #e8f5e8;
+        transform: scale(1.01);
+      }
+      100% {
+        background: #f8f9fa;
+        transform: scale(1);
+      }
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #999;
+      font-style: italic;
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚀 Real-Time Dashboard</h1>
+    <div id="connection-status" class="status-indicator disconnected">Connecting...</div>
+  </div>
+  
+  <div class="dashboard">
+    <!-- Logs Panel (Left Half) -->
+    <div class="panel">
+      <div class="panel-header">
+        📊 Live Logs
+      </div>
+      <div class="panel-content">
+        <ul id="logs">
+          <li class="empty-state">Waiting for log updates...</li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Bot Status Panel (Right Half) -->
+    <div class="panel">
+      <div class="panel-header">
+        🤖 Bot Status
+      </div>
+      <div class="panel-content">
+        <ul id="bot-status">
+          <li class="empty-state">Loading bot statuses...</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Determine the correct Socket.IO server URL
+    const socketUrl = window.location.hostname === 'localhost' ? 
+      'http://localhost:8080' : 
+      `${window.location.protocol}//${window.location.hostname}:8080`;
+    
+    const socket = io(socketUrl);
+    const logsList = document.getElementById('logs');
+    const botStatusList = document.getElementById('bot-status');
+    const connectionStatus = document.getElementById('connection-status');
+
+    // Track bot statuses and displayed logs
+    const botStatuses = new Map(); // Use id as key instead of bot_name
+    const displayedLogs = new Set();
+
+    socket.on('connect', () => {
+      console.log('Connected to Socket.IO server');
+      connectionStatus.textContent = '✅ Connected to Dashboard';
+      connectionStatus.className = 'status-indicator';
+      
+      // Subscribe to both logs and bot status updates
+      socket.emit('subscribe-logs', { client: 'dashboard' });
+      socket.emit('subscribe-botstatus', { client: 'dashboard' });
+      
+      // Load initial data
+      loadInitialLogs();
+      loadInitialBotStatuses();
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from Socket.IO server');
+      connectionStatus.textContent = '❌ Disconnected from Dashboard';
+      connectionStatus.className = 'status-indicator disconnected';
+    });
+
+    socket.on('connect_error', () => {
+      connectionStatus.textContent = '⚠️ Connection Error';
+      connectionStatus.className = 'status-indicator disconnected';
+    });
+
+    // Handle log updates
+    socket.on('log-update', (data) => {
+      // Check if we've already displayed this log
+      if (displayedLogs.has(data.id)) {
+        return;
+      }
+      
+      // Mark this log as displayed
+      displayedLogs.add(data.id);
+
+      // Remove empty state if present
+      const emptyState = logsList.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const item = document.createElement('li');
+      const timestamp = new Date().toLocaleTimeString();
+      const logLevel = data.log_level ? data.log_level.toLowerCase() : 'info';
+      
+      item.className = logLevel;
+      item.innerHTML = `
+        <strong>[${timestamp}] #${data.id}</strong><br>
+        <strong>[${data.log_level}]</strong> ${data.message}<br>
+        <small>Source: ${data.source || 'Unknown'}</small>
+      `;
+      
+      // Insert at top and limit to 50 entries
+      logsList.insertBefore(item, logsList.firstChild);
+      if (logsList.children.length > 50) {
+        const removedItem = logsList.removeChild(logsList.lastChild);
+        // Remove from displayedLogs set when we remove from UI
+        const removedId = parseInt(removedItem.innerHTML.match(/#(\d+)/)?.[1]);
+        if (removedId) {
+          displayedLogs.delete(removedId);
+        }
+      }
+    });
+
+    // Handle bot status updates
+    socket.on('botstatus-update', (data) => {
+      updateBotStatus(data);
+    });
+
+    function updateBotStatus(data) {
+      // Remove empty state if present
+      const emptyState = botStatusList.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      // Ensure we have a recent timestamp for sorting
+      if (!data.last_activity) {
+        data.last_activity = new Date().toISOString();
+      }
+
+      // Update or add bot status using unique ID
+      botStatuses.set(data.id, data);
+      renderBotStatuses();
+    }
+
+    function renderBotStatuses() {
+      botStatusList.innerHTML = '';
+      
+      if (botStatuses.size === 0) {
+        botStatusList.innerHTML = '<li class="empty-state">No bot statuses available</li>';
+        return;
+      }
+
+      // Sort by last activity or created_at (most recent first)
+      const sortedBots = Array.from(botStatuses.values()).sort((a, b) => {
+        const timeA = new Date(a.last_activity || a.created_at).getTime();
+        const timeB = new Date(b.last_activity || b.created_at).getTime();
+        return timeB - timeA; // Most recent first
+      });
+
+      sortedBots.forEach((bot, index) => {
+        const item = document.createElement('li');
+        item.className = 'bot-item';
+        
+        // Highlight if this is a recently updated bot (within last 5 seconds)
+        const isRecent = new Date() - new Date(bot.last_activity || bot.created_at) < 5000;
+        if (isRecent && index === 0) {
+          item.classList.add('new');
+          // Remove the highlight after animation
+          setTimeout(() => item.classList.remove('new'), 1000);
+        }
+        
+        const healthScore = bot.health_score || 0;
+        const healthClass = healthScore >= 80 ? 'good' : healthScore >= 50 ? 'warning' : 'critical';
+        const statusClass = bot.status ? bot.status.toLowerCase() : 'offline';
+        const timestamp = new Date(bot.last_activity || bot.created_at).toLocaleString();
+        
+        item.innerHTML = `
+          <div class="bot-name">${bot.bot_name}</div>
+          <div class="bot-status ${statusClass}">${bot.status || 'UNKNOWN'}</div>
+          <div class="bot-health">Health Score: ${healthScore}%</div>
+          <div class="health-bar">
+            <div class="health-fill ${healthClass}" style="width: ${healthScore}%"></div>
+          </div>
+          ${bot.description ? `<div class="bot-description">${bot.description}</div>` : ''}
+          <div class="bot-timestamp">Last updated: ${timestamp}</div>
+        `;
+        
+        botStatusList.appendChild(item);
+      });
+    }
+
+    async function loadInitialBotStatuses() {
+      try {
+        const response = await fetch(`${socketUrl}/api/botstatus`);
+        const data = await response.json();
+        
+        if (data.success && data.botstatuses) {
+          data.botstatuses.forEach(bot => {
+            botStatuses.set(bot.id, bot);
+          });
+          renderBotStatuses();
+        }
+      } catch (error) {
+        console.error('Error loading initial bot statuses:', error);
+      }
+    }
+
+    async function loadInitialLogs() {
+      try {
+        const response = await fetch(`${socketUrl}/api/logs?limit=20`);
+        const data = await response.json();
+        
+        if (data.success && data.logs) {
+          // Remove empty state if present
+          const emptyState = logsList.querySelector('.empty-state');
+          if (emptyState) {
+            emptyState.remove();
+          }
+
+          // Add logs in reverse order (newest first) and track them
+          data.logs.forEach(log => {
+            // Mark as displayed to avoid duplicates from real-time updates
+            displayedLogs.add(log.id);
+            
+            const item = document.createElement('li');
+            const timestamp = new Date(log.created_at).toLocaleTimeString();
+            const logLevel = log.log_level ? log.log_level.toLowerCase() : 'info';
+            
+            item.className = logLevel;
+            item.innerHTML = `
+              <strong>[${timestamp}] #${log.id}</strong><br>
+              <strong>[${log.log_level}]</strong> ${log.message}<br>
+              <small>Source: ${log.source || 'Unknown'}</small>
+            `;
+            
+            logsList.appendChild(item);
+          });
+        }
+      } catch (error) {
+        console.error('Error loading initial logs:', error);
+      }
+    }
+  </script>
+</body>
+</html>

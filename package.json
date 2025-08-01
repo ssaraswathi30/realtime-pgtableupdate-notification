@@ -1,5 +1,41 @@
 {
-  "dependencies": {
-    "socket.io-client": "^4.8.1"
-  }
+  "name": "realtime-pgtableupdate-notification",
+  "version": "1.0.0",
+  "description": "PostgreSQL Real-Time Log & Bot Status Notification system using pg_notify + Node.js + WebSocket",
+  "main": "listener/listener.js",
+  "scripts": {
+    "start": "cd listener && npm start",
+    "install-deps": "cd listener && npm install",
+    "test-api": "node test-botstatus-api.js && node test-logs-api.js",
+    "test-bots": "node test-botstatus-api.js",
+    "test-logs": "node test-logs-api.js",
+    "docker-up": "docker-compose up -d",
+    "docker-down": "docker-compose down",
+    "docker-build": "docker-compose up -d --build",
+    "setup": "./start-dashboard.sh"
+  },
+  "keywords": [
+    "postgresql",
+    "pg_notify",
+    "websocket",
+    "real-time",
+    "notifications",
+    "docker",
+    "nodejs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ssaraswathi30/realtime-pgtableupdate-notification.git"
+  },
+  "author": "ssaraswathi30",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "workspaces": [
+    "listener"
+  ],
+  "devDependencies": {},
+  "dependencies": {}
 }

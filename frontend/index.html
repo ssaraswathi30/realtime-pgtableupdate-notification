@@ -3,9 +3,60 @@
 <head>
   <title>Live Logs</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background-color: #f5f5f5; 
+      margin: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .nav-links {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .nav-links a {
+      display: inline-block;
+      padding: 8px 16px;
+      margin: 0 10px;
+      background: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    .nav-links a:hover {
+      background: #0056b3;
+    }
+    h2 { color: #333; }
+    #logs { 
+      list-style-type: none; 
+      padding: 0; 
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #logs li { 
+      background: #e6f3ff; 
+      margin: 5px; 
+      padding: 10px; 
+      border-left: 4px solid #007bff; 
+      border-radius: 4px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Real-Time Logs</h2>
+  <div class="header">
+    <h2>Real-Time Logs</h2>
+    <div class="nav-links">
+      <a href="client1.html">Client 1</a>
+      <a href="dashboard.html">📊 Dashboard (Logs + Bot Status)</a>
+    </div>
+  </div>
   <ul id="logs"></ul>
 
   <script>
