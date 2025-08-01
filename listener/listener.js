@@ -88,15 +88,3 @@ db.on('notification', msg => {
   });
 });
 
-db.on('notification', msg => {
-  const payload = JSON.parse(msg.payload);
-  console.log('📨 New log entry inserted:', payload);
-  console.log(`🔄 Broadcasting to ${wss.clients.size} connected clients`);
-
-  // Broadcast to all WebSocket clients
-  wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(payload));
-    }
-  });
-});
