@@ -196,7 +196,7 @@
 </head>
 <body>
   <div class="header">
-    <h1>🚀 Real-Time Dashboard</h1>
+    <h1>Real-Time Dashboard</h1>
     <div id="connection-status" class="status-indicator disconnected">Connecting...</div>
   </div>
   
@@ -204,7 +204,7 @@
     <!-- Logs Panel (Left Half) -->
     <div class="panel">
       <div class="panel-header">
-        📊 Live Logs
+        Live Logs
       </div>
       <div class="panel-content">
         <ul id="logs">
@@ -216,7 +216,7 @@
     <!-- Bot Status Panel (Right Half) -->
     <div class="panel">
       <div class="panel-header">
-        🤖 Bot Status
+        Bot Status
       </div>
       <div class="panel-content">
         <ul id="bot-status">
@@ -243,7 +243,7 @@
 
     socket.on('connect', () => {
       console.log('Connected to Socket.IO server');
-      connectionStatus.textContent = '✅ Connected to Dashboard';
+      connectionStatus.textContent = 'Connected to Dashboard';
       connectionStatus.className = 'status-indicator';
       
       // Subscribe to both logs and bot status updates
@@ -257,12 +257,12 @@
 
     socket.on('disconnect', () => {
       console.log('Disconnected from Socket.IO server');
-      connectionStatus.textContent = '❌ Disconnected from Dashboard';
+      connectionStatus.textContent = 'Disconnected from Dashboard';
       connectionStatus.className = 'status-indicator disconnected';
     });
 
     socket.on('connect_error', () => {
-      connectionStatus.textContent = '⚠️ Connection Error';
+      connectionStatus.textContent = 'Connection Error';
       connectionStatus.className = 'status-indicator disconnected';
     });
 
